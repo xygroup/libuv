@@ -58,7 +58,7 @@ DARWIN_COPTS = UNIX_COPTS + [
     "-D_DARWIN_UNLIMITED_SELECT=1",
 ]
 
-IOS_ARM_COPTS = COPTS + DARWIN_COPTS + [
+IOS_ARM_COPTS = DARWIN_COPTS + [
     "-DOS_IOS",
     "-miphoneos-version-min=7.0",
     "-arch armv7",
@@ -132,9 +132,10 @@ DARWIN_SRCS = UNIX_SRCS + [
 # You can use this library as: #include "libuv/uv.h"
 cc_inc_library(
     name = "libuv",
-    hdrs = ["include/uv.h"],
+    hdrs = glob(["include/*.h"]),
     prefix = "include",
     deps = [":libuv_impl"],
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
