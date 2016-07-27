@@ -111,6 +111,7 @@ UNIX_SRCS = SRCS + [
     "src/unix/pipe.c",
     "src/unix/poll.c",
     "src/unix/process.c",
+    "src/unix/pthread-barrier.c",
     "src/unix/signal.c",
     "src/unix/spinlock.h",
     "src/unix/stream.c",
