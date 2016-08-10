@@ -17,6 +17,13 @@ config_setting(
 )
 
 config_setting(
+    name = "k8",
+    values = {
+        "cpu": "amd64",
+    }
+)
+
+config_setting(
     name = "ios_armv7",
     values = {
         "ios_cpu": "armv7",
@@ -58,6 +65,10 @@ DARWIN_COPTS = UNIX_COPTS + [
     "-D_DARWIN_UNLIMITED_SELECT=1",
 ]
 
+LINUX_COPTS = UNIX_COPTS + [
+    "-D_GNU_SOURCE",
+]
+
 IOS_ARM_COPTS = DARWIN_COPTS + [
     "-DOS_IOS",
     "-miphoneos-version-min=7.0",
@@ -74,12 +85,14 @@ LINK_OPTS = select({
     "//conditions:default": ["-lpthread"],
 })
 
-SRCS = [
-    "include/uv.h",
-    "include/tree.h",
-    "include/uv-errno.h",
-    "include/uv-threadpool.h",
-    "include/uv-version.h",
+CLEANHDRS = [
+  "include/uv.h",
+  "include/uv-errno.h",
+  "include/uv-threadpool.h",
+  "include/uv-version.h",
+]
+
+CLEANSRCS = [
     "src/fs-poll.c",
     "src/heap-inl.h",
     "src/inet.c",
@@ -90,14 +103,15 @@ SRCS = [
     "src/version.c",
 ]
 
-UNIX_SRCS = SRCS + [
-    "include/pthread-barrier.h",
-    "include/uv-unix.h",
-    "include/uv-linux.h",
-    "include/uv-sunos.h",
-    "include/uv-darwin.h",
-    "include/uv-bsd.h",
-    "include/uv-aix.h",
+WINNT_SRCS = CLEANSRCS + [
+]
+
+UNIX_HDRS = CLEANHDRS + [
+  "include/uv-unix.h",
+  "include/tree.h",
+]
+
+UNIX_SRCS = CLEANSRCS + [
     "src/unix/async.c",
     "src/unix/atomic-ops.h",
     "src/unix/core.c",
@@ -111,7 +125,6 @@ UNIX_SRCS = SRCS + [
     "src/unix/pipe.c",
     "src/unix/poll.c",
     "src/unix/process.c",
-    "src/unix/pthread-barrier.c",
     "src/unix/signal.c",
     "src/unix/spinlock.h",
     "src/unix/stream.c",
@@ -122,12 +135,41 @@ UNIX_SRCS = SRCS + [
     "src/unix/udp.c",
 ]
 
+ANDROID_HDRS = UNIX_HDRS + [
+    "include/android-ifaddrs.h",
+    "include/pthread-barrier.h",
+]
+
+ANDROID_SRCS = UNIX_SRCS + [
+    "src/unix/android-ifaddrs.c",
+    "src/unix/pthread-fixes.c",
+    "src/unix/pthread-barrier.c",
+]
+
+DARWIN_HDRS = UNIX_HDRS + [
+    "include/uv-darwin.h",
+    "include/pthread-barrier.h",
+]
+
 DARWIN_SRCS = UNIX_SRCS + [
-    "src/unix/proctitle.c",
-    "src/unix/kqueue.c",
     "src/unix/darwin.c",
-    "src/unix/fsevents.c",
     "src/unix/darwin-proctitle.c",
+    "src/unix/fsevents.c",
+    "src/unix/kqueue.c",
+    "src/unix/proctitle.c",
+    "src/unix/pthread-barrier.c",
+]
+
+LINUX_HDRS = UNIX_HDRS + [
+    "include/uv-linux.h",
+]
+
+LINUX_SRCS = UNIX_SRCS + [
+    "src/unix/linux-core.c",
+    "src/unix/linux-inotify.c",
+    "src/unix/linux-syscalls.c",
+    "src/unix/linux-syscalls.h",
+    "src/unix/proctitle.c",
 ]
 
 # You can use this library as: #include "libuv/uv.h"
@@ -141,19 +183,26 @@ cc_inc_library(
 
 cc_library(
     name = "libuv_impl",
+    hdrs = select({
+        ":darwin": DARWIN_HDRS,
+        ":ios_armv7": DARWIN_HDRS,
+        ":ios_armv7s": DARWIN_HDRS,
+        ":ios_arm64": DARWIN_HDRS,
+        "//conditions:default": LINUX_HDRS,
+    }),
     srcs = select({
         ":darwin": DARWIN_SRCS,
         ":ios_armv7": DARWIN_SRCS,
         ":ios_armv7s": DARWIN_SRCS,
         ":ios_arm64": DARWIN_SRCS,
-        "//conditions:default": SRCS,
+        "//conditions:default": LINUX_SRCS,
     }),
     copts = select({
         ":darwin": DARWIN_COPTS,
         ":ios_armv7": IOS_ARM_COPTS,
         ":ios_armv7s": IOS_ARM_COPTS,
         ":ios_arm64": IOS_ARM_COPTS,
-        "//conditions:default": COPTS,
+        "//conditions:default": LINUX_COPTS,
     }),
     linkopts = LINK_OPTS,
     visibility = ["//visibility:private"],
