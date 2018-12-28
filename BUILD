@@ -173,10 +173,10 @@ LINUX_SRCS = UNIX_SRCS + [
 ]
 
 # You can use this library as: #include "libuv/uv.h"
-cc_inc_library(
+cc_library(
     name = "libuv",
     hdrs = glob(["include/*.h"]),
-    prefix = "include",
+    include_prefix = "include",
     deps = [":libuv_impl"],
     visibility = ["//visibility:public"],
 )
